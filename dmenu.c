@@ -51,6 +51,11 @@ static void cleanup(void);
 static void setup(void);
 static void usage(void);
 
+typedef enum image_mode {
+	MODE_CENTER,
+	MODE_TOP
+} image_mode;
+
 static char text[BUFSIZ] = "";
 static int bh, mw, mh;
 static int inputw, promptw;
@@ -69,6 +74,7 @@ static XIC xic;
 static int mon = -1;
 static int imagesize = 86;
 static int generatecache = 0;
+static image_mode imagemode = MODE_CENTER;
 static Imlib_Image image = NULL;
 
 #include "config.h"
@@ -103,19 +109,21 @@ static void loadimage(const char *file, int *width, int *height) {
 	*height = imlib_image_get_height();
 }
 
-static void scaleimage(int width, int height)
+static void scaleimage(int *width, int *height)
 {
 	int nwidth, nheight;
 	float aspect = 1.0f;
-	if(width > height) aspect = (float)imagesize/width;
-	else aspect = (float)imagesize/height;
-	nwidth = width * aspect;
-	nheight = height * aspect;
-	if(nwidth == width && nheight == height) return;
-	image = imlib_create_cropped_scaled_image(0,0,width,height,nwidth,nheight);
+	if(*width > *height) aspect = (float)imagesize/(*width);
+	else aspect = (float)imagesize/(*height);
+	nwidth = *width * aspect;
+	nheight = *height * aspect;
+	if(nwidth == *width && nheight == *height) return;
+	image = imlib_create_cropped_scaled_image(0,0,*width,*height,nwidth,nheight);
 	imlib_free_image();
 	if(!image) return;
 	imlib_context_set_image(image);
+	*width = nwidth;
+	*height = nheight;
 }
 
 static void loadimagecache(const char *file, int *width, int *height) {
@@ -128,6 +136,7 @@ static void loadimagecache(const char *file, int *width, int *height) {
 	/* just load and don't store or try cache */
 	if(imagesize > 256) {
 		loadimage(file, width, height);
+		if (image) scaleimage(width, height);
 		return;
 	}
 
@@ -174,7 +183,7 @@ static void loadimagecache(const char *file, int *width, int *height) {
 		imlib_free_image();
 		image = NULL;
 	} else if(image && (*width > imagesize || *height > imagesize)) {
-		scaleimage(*width, *height);
+		scaleimage(width, height);
 	}
 
 	/* we are done */
@@ -189,7 +198,7 @@ static void loadimagecache(const char *file, int *width, int *height) {
 		free(buf);
 		return;
 	}
-	scaleimage(*width, *height);
+	scaleimage(width, height);
 	imlib_image_set_format("png");
 	createifnexist_rec(buf);
 	imlib_save_image(buf);
@@ -240,6 +249,10 @@ main(int argc, char *argv[]) {
 			selected = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-is"))  /* image size */
 			imagesize = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-ia")) {/* image alignment */
+			char *arg = argv[++i];
+			if (!strcmp(arg, "top")) imagemode = MODE_TOP;
+		}
 		else
 			usage();
 
@@ -717,8 +730,13 @@ run(void) {
 			imlib_free_image();
 			image = NULL;
 		}
-		if(image && imagesize)
-			imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+dc->font.height*2+4);
+		if(image && imagesize) {
+			if(imagemode == MODE_TOP) {
+				imlib_render_image_on_drawable(4+(imagesize-width)/2, dc->font.height*2+4);
+			} else {
+				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+dc->font.height*2+4);
+			}
+		}
 		if(sel) limg = sel->image;
 		else limg = NULL;
 	}
@@ -831,6 +849,6 @@ setup(void) {
 void
 usage(void) {
 	fputs("usage: dmenu [-b] [-f] [-i] [-g] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
-	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-si index] [-is size] [-v]\n", stderr);
+	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-si index] [-is size] [-ia align] [-v]\n", stderr);
 	exit(EXIT_FAILURE);
 }
