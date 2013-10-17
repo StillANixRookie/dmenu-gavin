@@ -323,12 +323,18 @@ calcoffsets(void) {
 }
 
 char *
-cistrstr(const char *s, const char *sub) {
-	size_t len;
-
-	for(len = strlen(sub); *s; s++)
-		if(!strncasecmp(s, sub, len))
-			return (char *)s;
+cistrstr(const char *hay, const char *needle) {
+	size_t i, r, p, len, len2;
+	p = 0; r = 0;
+	if (!strcasecmp(hay, needle)) return (char*)hay;
+	if ((len = strlen(hay)) < (len2 = strlen(needle))) return NULL;
+	for (i = 0; i != len; ++i) {
+		if (p == len2) return (char*)&hay[r]; /* THIS IS IT! */
+		if (toupper(hay[i]) == toupper(needle[p++])) {
+			if (!r) r = i; /* could this be.. */
+		} else { if (r) i = r; r = 0; p = 0; } /* ..nope, damn it! */
+	}
+	if (p == len2) return (char*)&hay[r]; /* THIS IS IT! */
 	return NULL;
 }
 
@@ -577,11 +583,18 @@ void
 match(void) {
 	static char **tokv = NULL;
 	static int tokn = 0;
+	static size_t oldlen = 0;
 
 	char buf[sizeof text], *s;
 	int i, tokc = 0;
 	size_t len;
 	Item *item, *lprefix, *lsubstr, *prefixend, *substrend;
+
+	/* small optimization */
+	len = strlen(text);
+	if (!matches && oldlen && len >= oldlen)
+		return;
+	oldlen = len;
 
 	strcpy(buf, text);
 	/* separate input text into tokens to be matched individually */
