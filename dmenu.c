@@ -236,9 +236,9 @@ main(int argc, char *argv[]) {
 			selbgcolor = argv[++i];
 		else if(!strcmp(argv[i], "-sf"))  /* selected foreground color */
 			selfgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-si")) /* selected idnex */
+		else if(!strcmp(argv[i], "-si"))  /* selected index */
 			selected = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-is")) /* image size */
+		else if(!strcmp(argv[i], "-is"))  /* image size */
 			imagesize = atoi(argv[++i]);
 		else
 			usage();
