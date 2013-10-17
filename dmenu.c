@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <errno.h>
+#include <pwd.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -11,6 +13,8 @@
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif
+#include <Imlib2.h>
+#include <openssl/md5.h>
 #include "draw.h"
 
 #define INTERSECT(x,y,w,h,r)  (MAX(0, MIN((x)+(w),(r).x_org+(r).width)  - MAX((x),(r).x_org)) \
@@ -26,6 +30,7 @@
 typedef struct Item Item;
 struct Item {
 	char *text;
+	char *image;
 	Item *left, *right;
 	Bool out;
 };
@@ -50,6 +55,7 @@ static char text[BUFSIZ] = "";
 static int bh, mw, mh;
 static int inputw, promptw;
 static size_t cursor = 0;
+static unsigned int selected = 0;
 static ColorSet *normcol;
 static ColorSet *selcol;
 static ColorSet *outcol;
@@ -61,11 +67,134 @@ static Item *prev, *curr, *next, *sel;
 static Window win;
 static XIC xic;
 static int mon = -1;
+static int imagesize = 86;
+static int generatecache = 0;
+static Imlib_Image image = NULL;
 
 #include "config.h"
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
+
+static void createifnexist(const char *dir) {
+	if(access(dir, F_OK) == 0) return;
+	if(errno == EACCES) eprintf("no access to create directory: %s\n", dir);
+	if(mkdir(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1)
+		eprintf("failed to create directory: %s\n", dir);
+}
+
+static void createifnexist_rec(const char *dir) {
+	char *buf, *s = (char*)dir, *bs;
+    if(!(buf = malloc(strlen(s)+1)))
+		return;
+	memset(buf, 0, strlen(s)+1);
+	for(bs = buf; *s; ++s, ++bs) {
+		if(*s == '/' && *buf) createifnexist(buf);
+		*bs = *s;
+	}
+	free(buf);
+}
+
+static void loadimage(const char *file, int *width, int *height) {
+	image = imlib_load_image(file);
+	if (!image) return;
+	imlib_context_set_image(image);
+	*width = imlib_image_get_width();
+	*height = imlib_image_get_height();
+}
+
+static void scaleimage(int width, int height)
+{
+	int nwidth, nheight;
+	float aspect = 1.0f;
+	if(width > height) aspect = (float)imagesize/width;
+	else aspect = (float)imagesize/height;
+	nwidth = width * aspect;
+	nheight = height * aspect;
+	if(nwidth == width && nheight == height) return;
+	image = imlib_create_cropped_scaled_image(0,0,width,height,nwidth,nheight);
+	imlib_free_image();
+	if(!image) return;
+	imlib_context_set_image(image);
+}
+
+static void loadimagecache(const char *file, int *width, int *height) {
+	int slen = 0, i;
+	unsigned char digest[MD5_DIGEST_LENGTH];
+	char md5[MD5_DIGEST_LENGTH*2+1];
+	char *xdg_cache, *home = NULL, *dsize, *buf;
+	struct passwd *pw = NULL;
+
+	/* just load and don't store or try cache */
+	if(imagesize > 256) {
+		loadimage(file, width, height);
+		return;
+	}
+
+	/* try find image from cache first */
+	if(!(xdg_cache = getenv("XDG_CACHE_HOME"))) {
+		if(!(home = getenv("HOME")) && (pw = getpwuid(getuid())))
+			home = pw->pw_dir;
+		if(!home) {
+			eprintf("could not find home directory");
+			return;
+		}
+	}
+
+	/* which cache do we try? */
+	dsize = "normal";
+	if (imagesize > 128) dsize = "large";
+
+	slen = snprintf(NULL, 0, "file://%s", file)+1;
+	if(!(buf = malloc(slen))) {
+		eprintf("out of memory");
+		return;
+	}
+
+	/* calculate md5 from path */
+	sprintf(buf, "file://%s", file);
+	MD5((unsigned char*)buf, slen, digest);
+	free(buf);
+	for(i = 0; i < MD5_DIGEST_LENGTH; ++i) sprintf(&md5[i*2], "%02x", (unsigned int)digest[i]);
+
+	/* path for cached thumbnail */
+	if(xdg_cache) slen = snprintf(NULL, 0, "%s/thumbnails/%s/%s.png", xdg_cache, dsize, md5)+1;
+	else slen = snprintf(NULL, 0, "%s/.thumbnails/%s/%s.png", home, dsize, md5)+1;
+
+	if(!(buf = malloc(slen))) {
+		eprintf("out of memory");
+		return;
+	}
+
+	if(xdg_cache) sprintf(buf, "%s/thumbnails/%s/%s.png", xdg_cache, dsize, md5);
+	else sprintf(buf, "%s/.thumbnails/%s/%s.png", home, dsize, md5);
+
+	loadimage(buf, width, height);
+	if(image && *width < imagesize && *height < imagesize) {
+		imlib_free_image();
+		image = NULL;
+	} else if(image && (*width > imagesize || *height > imagesize)) {
+		scaleimage(*width, *height);
+	}
+
+	/* we are done */
+    if(image) {
+		free(buf);
+		return;
+	}
+
+    /* we din't find anything from cache, or it was just wrong */
+	loadimage(file, width, height);
+	if(!image) {
+		free(buf);
+		return;
+	}
+	scaleimage(*width, *height);
+	imlib_image_set_format("png");
+	createifnexist_rec(buf);
+	imlib_save_image(buf);
+	free(buf);
+}
 
 int
 main(int argc, char *argv[]) {
@@ -86,6 +215,8 @@ main(int argc, char *argv[]) {
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
 		}
+		else if(!strcmp(argv[i], "-g")) /* generate image cache */
+			generatecache = 1;
 		else if(i+1 == argc)
 			usage();
 		/* these options take one argument */
@@ -105,6 +236,10 @@ main(int argc, char *argv[]) {
 			selbgcolor = argv[++i];
 		else if(!strcmp(argv[i], "-sf"))  /* selected foreground color */
 			selfgcolor = argv[++i];
+		else if(!strcmp(argv[i], "-si")) /* selected idnex */
+			selected = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-is")) /* image size */
+			imagesize = atoi(argv[++i]);
 		else
 			usage();
 
@@ -128,6 +263,10 @@ main(int argc, char *argv[]) {
 
 void
 cleanup(void) {
+	if(image) {
+		imlib_free_image();
+		image = NULL;
+	}
 	freecol(dc, normcol);
 	freecol(dc, selcol);
 	XDestroyWindow(dc->dpy, win);
@@ -197,6 +336,7 @@ drawmenu(void) {
 
 	if(lines > 0) {
 		/* draw vertical list */
+		if(imagesize) dc->x = 4+imagesize;
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
@@ -496,6 +636,8 @@ void
 readstdin(void) {
 	char buf[sizeof text], *p, *maxstr = NULL;
 	size_t i, max = 0, size = 0;
+	int w, h;
+	char *limg = NULL;
 
 	/* read each line from stdin and add it to the item list */
 	for(i = 0; fgets(buf, sizeof buf, stdin); i++) {
@@ -509,16 +651,43 @@ readstdin(void) {
 		items[i].out = False;
 		if(strlen(items[i].text) > max)
 			max = strlen(maxstr = items[i].text);
+
+		/* read image */
+		if(!strncmp("IMG:", items[i].text, strlen("IMG:"))) {
+			if(!(items[i].image = malloc(strlen(items[i].text)+1)))
+				eprintf("cannot malloc %u bytes\n", strlen(items[i].text));
+			if(sscanf(items[i].text, "IMG:%[^\t]", items[i].image)) {
+				if(!(items[i].image = realloc(items[i].image, strlen(items[i].image)+1)))
+					eprintf("cannot realloc %u bytes\n", strlen(items[i].image)+1);
+				items[i].text += strlen("IMG:")+strlen(items[i].image)+1;
+			} else {
+				free(items[i].image);
+				items[i].image = NULL;
+			}
+		} else items[i].image = NULL;
+
+		/* cache image immediatly */
+		if(generatecache && imagesize <= 256 && items[i].image && strcmp(items[i].image, limg?limg:"")) {
+			loadimagecache(items[i].image, &w, &h);
+			fprintf(stderr, "-!- Generating thumbnail for: %s\n", items[i].image);
+		}
+		if(items[i].image) limg = items[i].image;
 	}
-	if(items)
+	if(items) {
 		items[i].text = NULL;
+		items[i].image = NULL;
+	}
+	if(!limg) imagesize = 0;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
 	lines = MIN(lines, i);
+	if(lines * dc->font.height < imagesize) lines = imagesize/dc->font.height+2;
 }
 
 void
 run(void) {
 	XEvent ev;
+	int width = 0, height = 0;
+	char *limg = NULL;
 
 	while(!XNextEvent(dc->dpy, &ev)) {
 		if(XFilterEvent(&ev, win))
@@ -540,11 +709,24 @@ run(void) {
 				XRaiseWindow(dc->dpy, win);
 			break;
 		}
+
+		if(!lines) continue;
+		if(sel && sel->image && strcmp(sel->image, limg?limg:"")) {
+			if(imagesize) loadimagecache(sel->image, &width, &height);
+		} else if((!sel || !sel->image) && image) {
+			imlib_free_image();
+			image = NULL;
+		}
+		if(image && imagesize)
+			imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+dc->font.height*2+4);
+		if(sel) limg = sel->image;
+		else limg = NULL;
 	}
 }
 
 void
 setup(void) {
+	unsigned int i;
 	int x, y, screen = DefaultScreen(dc->dpy);
 	Window root = RootWindow(dc->dpy, screen);
 	XSetWindowAttributes swa;
@@ -609,7 +791,6 @@ setup(void) {
 	}
 	promptw = (prompt && *prompt) ? textw(dc, prompt) : 0;
 	inputw = MIN(inputw, mw/3);
-	match();
 
 	/* create menu window */
 	swa.override_redirect = True;
@@ -627,12 +808,29 @@ setup(void) {
 
 	XMapRaised(dc->dpy, win);
 	resizedc(dc, mw, mh);
+
+	imlib_set_cache_size(8192 * 1024);
+	imlib_context_set_blend(1);
+	imlib_context_set_dither(1);
+	imlib_set_color_usage(128);
+	imlib_context_set_display(dc->dpy);
+	imlib_context_set_visual(DefaultVisual(dc->dpy, screen));
+	imlib_context_set_colormap(DefaultColormap(dc->dpy, screen));
+	imlib_context_set_drawable(win);
+
+    match();
+	for(i = 1; i < selected; ++i) {
+		if(sel && sel->right && (sel = sel->right) == next) {
+			curr = next;
+			calcoffsets();
+		}
+	}
 	drawmenu();
 }
 
 void
 usage(void) {
-	fputs("usage: dmenu [-b] [-f] [-i] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
-	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
+	fputs("usage: dmenu [-b] [-f] [-i] [-g] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
+	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-si index] [-is size] [-v]\n", stderr);
 	exit(EXIT_FAILURE);
 }

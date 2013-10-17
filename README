@@ -23,7 +23,8 @@ Running dmenu
 -------------
 See the man page for details.
 
-Thumbnails get cached to $XDG_DATA_HOME/dmenu/imlib.
+Thumbnails get cached to according to XDG thumbnail spec.
+http://specifications.freedesktop.org/thumbnail-spec/thumbnail-spec-latest.html
 
 Pass -g to generate thumbnails immediatly for the piped images.
 Pass -is to specify image size (keeping aspect ratio).

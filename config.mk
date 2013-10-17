@@ -12,16 +12,20 @@ X11LIB = /usr/X11R6/lib
 XFTINC = `pkg-config --cflags xft pango pangoxft`
 XFTLIBS  = -lXrender -lfreetype -lz `pkg-config --libs xft pango pangoxft`
 
+# Imlib
+IMLIBINC = `pkg-config --cflags imlib2 openssl`
+IMLIBLIBS = `pkg-config --libs imlib2 openssl`
+
 # Xinerama, comment if you don't want it
 XINERAMALIBS  = -lXinerama
 XINERAMAFLAGS = -DXINERAMA
 
 # includes and libs
-INCS = -I${X11INC} ${XFTINC}
-LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${XFTLIBS}
+INCS = -I${X11INC} ${XFTINC} ${IMLIBINC}
+LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${XFTLIBS} ${IMLIBLIBS}
 
 # flags
-CPPFLAGS = -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
+CPPFLAGS = -DFORTIFY_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
 CFLAGS   = -ansi -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
 LDFLAGS  = -s ${LIBS}
 
