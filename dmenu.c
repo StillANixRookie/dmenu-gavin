@@ -127,7 +127,7 @@ static void scaleimage(int *width, int *height)
 }
 
 static void loadimagecache(const char *file, int *width, int *height) {
-	int slen = 0, i;
+	int slen = 0, i, cache = 1;
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	char md5[MD5_DIGEST_LENGTH*2+1];
 	char *xdg_cache, *home = NULL, *dsize, *buf;
@@ -198,10 +198,16 @@ static void loadimagecache(const char *file, int *width, int *height) {
 		free(buf);
 		return;
 	}
+
+	if (*width < imagesize && *height < imagesize) {
+		cache = 0;
+	}
 	scaleimage(width, height);
-	imlib_image_set_format("png");
-	createifnexist_rec(buf);
-	imlib_save_image(buf);
+	if (cache) {
+		imlib_image_set_format("png");
+		createifnexist_rec(buf);
+		imlib_save_image(buf);
+	}
 	free(buf);
 }
 
