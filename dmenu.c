@@ -712,7 +712,7 @@ readstdin(void) {
 	if(!limg) imagesize = 0;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
 	lines = MIN(lines, i);
-	if(lines * dc->font.height < imagesize) lines = imagesize/dc->font.height+2;
+	if(lines * dc->font.height < imagesize) lines = imagesize/dc->font.height;
 }
 
 void
@@ -750,10 +750,11 @@ run(void) {
 			image = NULL;
 		}
 		if(image && imagesize) {
+			int topmargin = dc->font.height*lines-imagesize+dc->font.height*2-2;
 			if(imagemode == MODE_TOP) {
-				imlib_render_image_on_drawable(4+(imagesize-width)/2, dc->font.height*2+4);
+				imlib_render_image_on_drawable(4+(imagesize-width)/2, topmargin);
 			} else {
-				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+dc->font.height*2+4);
+				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+topmargin);
 			}
 		}
 		if(sel) limg = sel->image;
