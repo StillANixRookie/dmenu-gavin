@@ -46,12 +46,16 @@ static void match(void);
 static size_t nextrune(int inc);
 static void paste(void);
 static void readstdin(void);
+static void drawimage(void);
 static void run(void);
 static void cleanup(void);
+static void jumptoindex(unsigned int index);
+static void resizetoimageheight(int imageheight);
 static void setup(void);
 static void usage(void);
 
 typedef enum image_mode {
+	MODE_TOP_CENTER,
 	MODE_CENTER,
 	MODE_TOP,
 	MODE_BOTTOM
@@ -73,9 +77,11 @@ static Item *prev, *curr, *next, *sel;
 static Window win;
 static XIC xic;
 static int mon = -1;
+static int reallines = 0;
+static int imagegaps = 4;
 static int imagesize = 86;
 static int generatecache = 0;
-static image_mode imagemode = MODE_CENTER;
+static image_mode imagemode = MODE_TOP_CENTER;
 static Imlib_Image image = NULL;
 
 #include "config.h"
@@ -127,7 +133,8 @@ static void scaleimage(int *width, int *height)
 	*height = nheight;
 }
 
-static void loadimagecache(const char *file, int *width, int *height) {
+static void
+loadimagecache(const char *file, int *width, int *height) {
 	int slen = 0, i, cache = 1;
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	char md5[MD5_DIGEST_LENGTH*2+1];
@@ -258,8 +265,22 @@ main(int argc, char *argv[]) {
 			imagesize = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-ia")) {/* image alignment */
 			char *arg = argv[++i];
+			if (!strcmp(arg, "center")) imagemode = MODE_CENTER;
 			if (!strcmp(arg, "top")) imagemode = MODE_TOP;
 			if (!strcmp(arg, "bottom")) imagemode = MODE_BOTTOM;
+			if (!strcmp(arg, "top-center-gapless")) imagegaps = 0;
+			if (!strcmp(arg, "center-gapless")) {
+				imagegaps = 0;
+				imagemode = MODE_CENTER;
+			}
+			if (!strcmp(arg, "top-gapless")) {
+				imagegaps = 0;
+				imagemode = MODE_TOP;
+			}
+			if (!strcmp(arg, "bottom-gapless")) {
+				imagegaps = 0;
+				imagemode = MODE_BOTTOM;
+			}
 		}
 		else
 			usage();
@@ -363,7 +384,7 @@ drawmenu(void) {
 
 	if(lines > 0) {
 		/* draw vertical list */
-		if(imagesize) dc->x = 4+imagesize;
+		if(imagesize) dc->x = imagesize+imagegaps;
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
@@ -714,25 +735,59 @@ readstdin(void) {
 	if(!limg) imagesize = 0;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
 	lines = MIN(lines, i);
-	if(lines * dc->font.height < imagesize) lines = imagesize/dc->font.height;
+}
+
+void
+drawimage(void) {
+	int width = 0, height = 0;
+	char *limg = NULL;
+	Item *lsel = NULL;
+
+	if(lsel == sel || !lines) return;
+	if(sel && sel->image && strcmp(sel->image, limg?limg:"")) {
+		if(imagesize) loadimagecache(sel->image, &width, &height);
+	} else if((!sel || !sel->image) && image) {
+		imlib_free_image();
+		image = NULL;
+	}
+	if(image && imagesize) {
+		int leftmargin = imagegaps;
+		if(mh != bh+height+imagegaps*2) {
+			resizetoimageheight(height);
+		}
+		if(imagemode == MODE_TOP) {
+			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, bh+imagegaps);
+		} else if(imagemode == MODE_BOTTOM) {
+			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, mh-height-imagegaps);
+		} else if(imagemode == MODE_CENTER) {
+			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, (mh-bh-height)/2+bh);
+		} else {
+			int minh = MIN(imagesize, mh-bh-imagegaps*2);
+			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, (minh-height)/2+bh+imagegaps);
+		}
+	}
+	if(sel) limg = sel->image;
+	else limg = NULL;
+	lsel = sel;
 }
 
 void
 run(void) {
 	XEvent ev;
-	int width = 0, height = 0;
-	char *limg = NULL;
 
 	while(!XNextEvent(dc->dpy, &ev)) {
 		if(XFilterEvent(&ev, win))
 			continue;
 		switch(ev.type) {
 		case Expose:
-			if(ev.xexpose.count == 0)
+			if(ev.xexpose.count == 0) {
 				mapdc(dc, win, mw, mh);
+				drawimage();
+			}
 			break;
 		case KeyPress:
 			keypress(&ev.xkey);
+			drawimage();
 			break;
 		case SelectionNotify:
 			if(ev.xselection.property == utf8)
@@ -743,32 +798,44 @@ run(void) {
 				XRaiseWindow(dc->dpy, win);
 			break;
 		}
-
-		if(!lines) continue;
-		if(sel && sel->image && strcmp(sel->image, limg?limg:"")) {
-			if(imagesize) loadimagecache(sel->image, &width, &height);
-		} else if((!sel || !sel->image) && image) {
-			imlib_free_image();
-			image = NULL;
-		}
-		if(image && imagesize) {
-			int topmargin = dc->font.height*lines-imagesize+dc->font.height*2-2;
-			if(imagemode == MODE_TOP) {
-				imlib_render_image_on_drawable(4+(imagesize-width)/2, topmargin);
-			} else if(imagemode == MODE_BOTTOM) {
-				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)+topmargin);
-			} else {
-				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+topmargin);
-			}
-		}
-		if(sel) limg = sel->image;
-		else limg = NULL;
 	}
 }
 
 void
-setup(void) {
+jumptoindex(unsigned int index) {
 	unsigned int i;
+	sel = curr = matches;
+	calcoffsets();
+	for(i = 1; i < index; ++i) {
+		if(sel && sel->right && (sel = sel->right) == next) {
+			curr = next;
+			calcoffsets();
+		}
+	}
+}
+
+void
+resizetoimageheight(int imageheight) {
+	int omh = mh, olines = lines;
+	lines = reallines;
+	if(lines * bh < imageheight+imagegaps*2) lines = (imageheight+imagegaps*2)/bh;
+	mh = (lines + 1) * bh;
+	if(mh-bh < imageheight+imagegaps*2) mh = imageheight+imagegaps*2+bh;
+	if(!win || omh == mh) return;
+	XResizeWindow(dc->dpy, win, mw, mh);
+	resizedc(dc, mw, mh);
+
+	if(olines != lines) {
+		Item *item;
+		unsigned int i = 1;
+		for (item = matches; item && item != sel; item = item->right) ++i;
+		jumptoindex(i);
+	}
+	drawmenu();
+}
+
+void
+setup(void) {
 	int x, y, screen = DefaultScreen(dc->dpy);
 	Window root = RootWindow(dc->dpy, screen);
 	XSetWindowAttributes swa;
@@ -788,7 +855,9 @@ setup(void) {
 	/* calculate menu geometry */
 	bh = dc->font.height + 2;
 	lines = MAX(lines, 0);
-	mh = (lines + 1) * bh;
+	reallines = lines;
+	resizetoimageheight(imagesize);
+
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int a, j, di, i = 0, area = 0;
@@ -861,12 +930,7 @@ setup(void) {
 	imlib_context_set_drawable(win);
 
     match();
-	for(i = 1; i < selected; ++i) {
-		if(sel && sel->right && (sel = sel->right) == next) {
-			curr = next;
-			calcoffsets();
-		}
-	}
+	jumptoindex(selected);
 	drawmenu();
 }
 

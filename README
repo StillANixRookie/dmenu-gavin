@@ -28,7 +28,7 @@ http://specifications.freedesktop.org/thumbnail-spec/thumbnail-spec-latest.html
 
 Pass -g to generate thumbnails immediatly for the piped images.
 Pass -is to specify image size (keeping aspect ratio).
-Pass -ia to specify image alignment (center/top/bottom, where center is default)
+Pass -ia to specify image alignment (top-center/center/top/bottom/*-gapless, where top-center is default)
 Note, that using too big images cause slowdown because images are loaded each time, selection image differs from last image.
 
 Example pipe listing with images:

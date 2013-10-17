@@ -162,11 +162,10 @@ resizedc(DC *dc, unsigned int w, unsigned int h) {
 	dc->h = h;
 	dc->canvas = XCreatePixmap(dc->dpy, DefaultRootWindow(dc->dpy), w, h,
 	                           DefaultDepth(dc->dpy, screen));
-	if(!dc->xftdraw) {
-		dc->xftdraw = XftDrawCreate(dc->dpy, dc->canvas, DefaultVisual(dc->dpy, screen), DefaultColormap(dc->dpy, screen));
-		if (!dc->xftdraw) eprintf("error, cannot create xft drawable\n");
-	}
 
+	if(dc->xftdraw) XftDrawDestroy(dc->xftdraw);
+	dc->xftdraw = XftDrawCreate(dc->dpy, dc->canvas, DefaultVisual(dc->dpy, screen), DefaultColormap(dc->dpy, screen));
+	if (!dc->xftdraw) eprintf("error, cannot create xft drawable\n");
 }
 
 int
