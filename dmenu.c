@@ -53,7 +53,8 @@ static void usage(void);
 
 typedef enum image_mode {
 	MODE_CENTER,
-	MODE_TOP
+	MODE_TOP,
+	MODE_BOTTOM
 } image_mode;
 
 static char text[BUFSIZ] = "";
@@ -258,6 +259,7 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-ia")) {/* image alignment */
 			char *arg = argv[++i];
 			if (!strcmp(arg, "top")) imagemode = MODE_TOP;
+			if (!strcmp(arg, "bottom")) imagemode = MODE_BOTTOM;
 		}
 		else
 			usage();
@@ -753,6 +755,8 @@ run(void) {
 			int topmargin = dc->font.height*lines-imagesize+dc->font.height*2-2;
 			if(imagemode == MODE_TOP) {
 				imlib_render_image_on_drawable(4+(imagesize-width)/2, topmargin);
+			} else if(imagemode == MODE_BOTTOM) {
+				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)+topmargin);
 			} else {
 				imlib_render_image_on_drawable(4+(imagesize-width)/2, (imagesize-height)/2+topmargin);
 			}
