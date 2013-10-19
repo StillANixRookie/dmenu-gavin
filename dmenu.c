@@ -6,6 +6,9 @@
 #include <strings.h>
 #include <errno.h>
 #include <pwd.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <utime.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -133,6 +136,13 @@ static void scaleimage(int *width, int *height)
 	*height = nheight;
 }
 
+static time_t
+mtime(const char *file) {
+	struct stat statbuf;
+	if(stat(file, &statbuf) == -1) return 0;
+	return statbuf.st_mtime;
+}
+
 static void
 loadimagecache(const char *file, int *width, int *height) {
 	int slen = 0, i, cache = 1;
@@ -187,7 +197,10 @@ loadimagecache(const char *file, int *width, int *height) {
 	else sprintf(buf, "%s/.thumbnails/%s/%s.png", home, dsize, md5);
 
 	loadimage(buf, width, height);
-	if(image && *width < imagesize && *height < imagesize) {
+	if(image && mtime(buf) != mtime(file)) {
+		imlib_free_image();
+		image = NULL;
+	} else if(image && *width < imagesize && *height < imagesize) {
 		imlib_free_image();
 		image = NULL;
 	} else if(image && (*width > imagesize || *height > imagesize)) {
@@ -212,9 +225,16 @@ loadimagecache(const char *file, int *width, int *height) {
 	}
 	scaleimage(width, height);
 	if (cache) {
+		struct utimbuf newtime;
+		struct stat orig;
+		stat(file, &orig);
 		imlib_image_set_format("png");
 		createifnexist_rec(buf);
 		imlib_save_image(buf);
+		newtime.actime = orig.st_atime;
+		newtime.modtime = orig.st_mtime;
+		utime(buf, &newtime);
+
 	}
 	free(buf);
 }
