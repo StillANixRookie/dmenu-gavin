@@ -200,6 +200,7 @@ loadimagecache(const char *file, int *width, int *height) {
 	if(image && mtime(buf) != mtime(file)) {
 		imlib_free_image();
 		image = NULL;
+		remove(buf); /* this needs to be recreated anyway */
 	} else if(image && *width < imagesize && *height < imagesize) {
 		imlib_free_image();
 		image = NULL;
