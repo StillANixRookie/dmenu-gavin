@@ -777,8 +777,10 @@ drawimage(void) {
 			resizetoimageheight(height);
 		}
 		if(imagemode == MODE_TOP) {
+			if(height > width) width = height;
 			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, bh+imagegaps);
 		} else if(imagemode == MODE_BOTTOM) {
+			if(height > width) width = height;
 			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, mh-height-imagegaps);
 		} else if(imagemode == MODE_CENTER) {
 			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, (mh-bh-height)/2+bh);
