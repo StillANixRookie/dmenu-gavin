@@ -779,11 +779,9 @@ readstdin(void) {
 
 void
 drawimage(void) {
-	int width = 0, height = 0;
-	char *limg = NULL;
-	Item *lsel = NULL;
+	static int width = 0, height = 0;
+	static char *limg = NULL;
 
-	if(lsel == sel || !lines) return;
 	if(sel && sel->image && strcmp(sel->image, limg?limg:"")) {
 		if(longestedge) loadimagecache(sel->image, &width, &height);
 	} else if((!sel || !sel->image) && image) {
@@ -806,9 +804,9 @@ drawimage(void) {
 			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, (minh-height)/2+bh+imagegaps);
 		}
 	}
+
 	if(sel) limg = sel->image;
 	else limg = NULL;
-	lsel = sel;
 }
 
 void
