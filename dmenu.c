@@ -82,7 +82,9 @@ static XIC xic;
 static int mon = -1;
 static int reallines = 0;
 static int imagegaps = 4;
-static int imagesize = 86;
+static int imagewidth = 86;
+static int imageheight = 86;
+static int longestedge = 0;
 static int generatecache = 0;
 static image_mode imagemode = MODE_TOP_CENTER;
 static Imlib_Image image = NULL;
@@ -123,8 +125,19 @@ static void scaleimage(int *width, int *height)
 {
 	int nwidth, nheight;
 	float aspect = 1.0f;
-	if(*width > *height) aspect = (float)imagesize/(*width);
-	else aspect = (float)imagesize/(*height);
+
+	if (imagewidth < imageheight) {
+		if (imagewidth > *width)
+			aspect = (float)(*width)/imagewidth;
+		else
+			aspect = (float)imagewidth/(*width);
+	} else {
+		if (imageheight > *height)
+			aspect = (float)(*height)/imageheight;
+		else
+			aspect = (float)imageheight/(*height);
+	}
+
 	nwidth = *width * aspect;
 	nheight = *height * aspect;
 	if(nwidth == *width && nheight == *height) return;
@@ -152,7 +165,7 @@ loadimagecache(const char *file, int *width, int *height) {
 	struct passwd *pw = NULL;
 
 	/* just load and don't store or try cache */
-	if(imagesize > 256) {
+	if(longestedge > 256) {
 		loadimage(file, width, height);
 		if (image) scaleimage(width, height);
 		return;
@@ -170,7 +183,7 @@ loadimagecache(const char *file, int *width, int *height) {
 
 	/* which cache do we try? */
 	dsize = "normal";
-	if (imagesize > 128) dsize = "large";
+	if (longestedge > 128) dsize = "large";
 
 	slen = snprintf(NULL, 0, "file://%s", file)+1;
 	if(!(buf = malloc(slen))) {
@@ -201,10 +214,10 @@ loadimagecache(const char *file, int *width, int *height) {
 		imlib_free_image();
 		image = NULL;
 		remove(buf); /* this needs to be recreated anyway */
-	} else if(image && *width < imagesize && *height < imagesize) {
+	} else if(image && *width < imagewidth && *height < imageheight) {
 		imlib_free_image();
 		image = NULL;
-	} else if(image && (*width > imagesize || *height > imagesize)) {
+	} else if(image && (*width > imagewidth || *height > imageheight)) {
 		scaleimage(width, height);
 	}
 
@@ -221,7 +234,7 @@ loadimagecache(const char *file, int *width, int *height) {
 		return;
 	}
 
-	if (*width < imagesize && *height < imagesize) {
+	if (*width < imagewidth && *height < imageheight) {
 		cache = 0;
 	}
 	scaleimage(width, height);
@@ -282,9 +295,13 @@ main(int argc, char *argv[]) {
 			selfgcolor = argv[++i];
 		else if(!strcmp(argv[i], "-si"))  /* selected index */
 			selected = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-is"))  /* image size */
-			imagesize = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-ia")) {/* image alignment */
+		else if(!strcmp(argv[i], "-is")) {  /* image size */
+			char buf[255];
+			memset(buf, 0, sizeof(buf));
+			memcpy(buf, argv[++i], sizeof(buf)-1);
+			if(sscanf(buf, "%dx%d", &imagewidth, &imageheight) == 1)
+				imageheight = imagewidth;
+		} else if(!strcmp(argv[i], "-ia")) {/* image alignment */
 			char *arg = argv[++i];
 			if (!strcmp(arg, "center")) imagemode = MODE_CENTER;
 			if (!strcmp(arg, "top")) imagemode = MODE_TOP;
@@ -305,6 +322,8 @@ main(int argc, char *argv[]) {
 		}
 		else
 			usage();
+
+	longestedge = MAX(imagewidth, imageheight);
 
 	dc = initdc();
 	initfont(dc, (font?font:DEFFONT));
@@ -405,7 +424,7 @@ drawmenu(void) {
 
 	if(lines > 0) {
 		/* draw vertical list */
-		if(imagesize) dc->x = imagesize+imagegaps;
+		if(imagewidth) dc->x = imagewidth+imagegaps;
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
@@ -743,7 +762,7 @@ readstdin(void) {
 		} else items[i].image = NULL;
 
 		/* cache image immediatly */
-		if(generatecache && imagesize <= 256 && items[i].image && strcmp(items[i].image, limg?limg:"")) {
+		if(generatecache && longestedge <= 256 && items[i].image && strcmp(items[i].image, limg?limg:"")) {
 			loadimagecache(items[i].image, &w, &h);
 			fprintf(stderr, "-!- Generating thumbnail for: %s\n", items[i].image);
 		}
@@ -753,7 +772,7 @@ readstdin(void) {
 		items[i].text = NULL;
 		items[i].image = NULL;
 	}
-	if(!limg) imagesize = imagegaps = 0;
+	if(!limg) longestedge = imagegaps = 0;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
 	lines = MIN(lines, i);
 }
@@ -766,27 +785,25 @@ drawimage(void) {
 
 	if(lsel == sel || !lines) return;
 	if(sel && sel->image && strcmp(sel->image, limg?limg:"")) {
-		if(imagesize) loadimagecache(sel->image, &width, &height);
+		if(longestedge) loadimagecache(sel->image, &width, &height);
 	} else if((!sel || !sel->image) && image) {
 		imlib_free_image();
 		image = NULL;
 	}
-	if(image && imagesize) {
+	if(image && longestedge) {
 		int leftmargin = imagegaps;
 		if(mh != bh+height+imagegaps*2) {
 			resizetoimageheight(height);
 		}
 		if(imagemode == MODE_TOP) {
-			if(height > width) width = height;
-			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, bh+imagegaps);
+			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, bh+imagegaps);
 		} else if(imagemode == MODE_BOTTOM) {
-			if(height > width) width = height;
-			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, mh-height-imagegaps);
+			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, mh-height-imagegaps);
 		} else if(imagemode == MODE_CENTER) {
-			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, (mh-bh-height)/2+bh);
+			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, (mh-bh-height)/2+bh);
 		} else {
-			int minh = MIN(imagesize, mh-bh-imagegaps*2);
-			imlib_render_image_on_drawable(leftmargin+(imagesize-width)/2, (minh-height)/2+bh+imagegaps);
+			int minh = MIN(imageheight, mh-bh-imagegaps*2);
+			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, (minh-height)/2+bh+imagegaps);
 		}
 	}
 	if(sel) limg = sel->image;
@@ -879,7 +896,7 @@ setup(void) {
 	bh = dc->font.height + 2;
 	lines = MAX(lines, 0);
 	reallines = lines;
-	resizetoimageheight(imagesize);
+	resizetoimageheight(imageheight);
 
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
