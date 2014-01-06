@@ -765,7 +765,7 @@ readstdin(void) {
 		items[i].text = NULL;
 		items[i].image = NULL;
 	}
-	if(!limg) longestedge = imagegaps = 0;
+	if(!limg) imagewidth = imageheight = longestedge = imagegaps = 0;
 	inputw = maxstr ? textw(dc, maxstr) : 0;
 	lines = MIN(lines, i);
 }
