@@ -793,7 +793,7 @@ drawimage(void) {
 		} else if(imagemode == MODE_CENTER) {
 			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, (mh-bh-height)/2+bh);
 		} else {
-			int minh = MIN(imageheight, mh-bh-imagegaps*2);
+			int minh = MIN(height, mh-bh-imagegaps*2);
 			imlib_render_image_on_drawable(leftmargin+(imagewidth-width)/2, (minh-height)/2+bh+imagegaps);
 		}
 	}
