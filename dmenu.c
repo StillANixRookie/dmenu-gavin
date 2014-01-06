@@ -126,17 +126,10 @@ static void scaleimage(int *width, int *height)
 	int nwidth, nheight;
 	float aspect = 1.0f;
 
-	if (imagewidth < imageheight) {
-		if (imagewidth > *width)
-			aspect = (float)(*width)/imagewidth;
-		else
-			aspect = (float)imagewidth/(*width);
-	} else {
-		if (imageheight > *height)
-			aspect = (float)(*height)/imageheight;
-		else
-			aspect = (float)imageheight/(*height);
-	}
+	if (imagewidth > *width)
+		aspect = (float)(*width)/imagewidth;
+	else
+		aspect = (float)imagewidth/(*width);
 
 	nwidth = *width * aspect;
 	nheight = *height * aspect;
