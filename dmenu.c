@@ -417,7 +417,7 @@ drawmenu(void) {
 
 	if(lines > 0) {
 		/* draw vertical list */
-		if(imagewidth) dc->x = imagewidth+imagegaps;
+		if(longestedge && imagewidth) dc->x = imagewidth+imagegaps;
 		dc->w = mw - dc->x;
 		for(item = curr; item != next; item = item->right) {
 			dc->y += dc->h;
