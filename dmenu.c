@@ -80,6 +80,7 @@ static Item *prev, *curr, *next, *sel;
 static Window win;
 static XIC xic;
 static int mon = -1;
+static int wrapselection = 0;
 static int reallines = 0;
 static int imagegaps = 4;
 static int imagewidth = 86;
@@ -265,6 +266,8 @@ main(int argc, char *argv[]) {
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
 		}
+		else if(!strcmp(argv[i], "-w")) /* wrap selection */
+			wrapselection = 1;
 		else if(!strcmp(argv[i], "-g")) /* generate image cache */
 			generatecache = 1;
 		else if(i+1 == argc)
@@ -585,9 +588,19 @@ keypress(XKeyEvent *ev) {
 			return;
 		/* fallthrough */
 	case XK_Up:
-		if(sel && sel->left && (sel = sel->left)->right == curr) {
+		if(sel && sel->left) {
+			if ((sel = sel->left)->right == curr) {
+				curr = prev;
+				calcoffsets();
+			}
+		} else if(wrapselection) {
+			curr = matchend;
+			calcoffsets();
 			curr = prev;
 			calcoffsets();
+			while(next && (curr = curr->right))
+				calcoffsets();
+			sel = matchend;
 		}
 		break;
 	case XK_Next:
@@ -618,8 +631,13 @@ keypress(XKeyEvent *ev) {
 			return;
 		/* fallthrough */
 	case XK_Down:
-		if(sel && sel->right && (sel = sel->right) == next) {
-			curr = next;
+		if(sel && sel->right) {
+			if ((sel = sel->right) == next) {
+				curr = next;
+				calcoffsets();
+			}
+		} else if(wrapselection) {
+			sel = curr = matches;
 			calcoffsets();
 		}
 		break;
