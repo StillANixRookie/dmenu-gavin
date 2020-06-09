@@ -905,51 +905,53 @@ setup(void)
 				if (INTERSECT(x, y, 1, 1, info[i]))
 					break;
 
-		mw = (dmw>0 ? dmw : info[i].width);
-		if (strcmp(location,"mc")==0) {
-			x = info[i].x_org + info[i].width/2 - mw/2;
-			y = info[i].y_org + info[i].height/2 - mh/2;
-		}
-		else if(strcmp(location,"tl")==0) {
-			x = info[i].x_org;
-			y = info[i].y_org;
-		}
-		else if (strcmp(location,"tc")==0) {
-			x = info[i].x_org + info[i].width/2 - mw/2;
-			y = info[i].y_org;
-		}
-		else if (strcmp(location,"tr")==0) {
-			x = info[i].x_org + info[i].width - mw;
-			y = info[i].y_org;
-		}
-		else if (strcmp(location,"mr")==0) {
-			x = info[i].x_org + info[i].width - mw;
-			y = info[i].y_org + info[i].height/2 - mh/2;
-		}
-		else if (strcmp(location,"br")==0) {
-			x = info[i].x_org + info[i].width - mw;
-			y = info[i].y_org + info[i].height - mh;
-		}
-		else if (strcmp(location,"bc")==0) {
-			x = info[i].x_org + info[i].width/2 - mw/2;
-			y = info[i].y_org + info[i].height - mh;
-		}
-		else if (strcmp(location,"bl")==0) {
-			x = info[i].x_org;
-			y = info[i].y_org + info[i].height - mh;
-		}
-		else if (strcmp(location,"ml")==0) {
-			x = info[i].x_org;
-			y = info[i].y_org + info[i].height/2 - mh/2;
-		}
-		else {
-		x = info[i].x_org;
-		y = info[i].y_org;
-		}
-		x = x + dmx;
-		y = y + dmy;
 //		x = info[i].x_org + dmx;
 //		y = info[i].y_org + (topbar ? dmy : info[i].height - mh - dmy);
+		mw = (dmw>0 ? dmw : info[i].width);
+		if (location == 0) {
+			x = info[i].x_org + info[i].width/2 - mw/2;
+			y = info[i].y_org + info[i].height/2 - mh/2;
+		}
+		else if(location == 1) {
+			x = info[i].x_org;
+			y = info[i].y_org;
+		}
+		else if (location == 2) {
+			x = info[i].x_org + info[i].width/2 - mw/2;
+			y = info[i].y_org;
+		}
+		else if (location == 3) {
+			x = info[i].x_org + info[i].width - mw;
+			y = info[i].y_org;
+		}
+		else if (location == 4) {
+			x = info[i].x_org + info[i].width - mw;
+			y = info[i].y_org + info[i].height/2 - mh/2;
+		}
+		else if (location == 5) {
+			x = info[i].x_org + info[i].width - mw;
+			y = info[i].y_org + info[i].height - mh;
+		}
+		else if (location == 6) {
+			x = info[i].x_org + info[i].width/2 - mw/2;
+			y = info[i].y_org + info[i].height - mh;
+		}
+		else if (location == 7) {
+			x = info[i].x_org;
+			y = info[i].y_org + info[i].height - mh;
+		}
+		else if (location == 8) {
+			x = info[i].x_org;
+			y = info[i].y_org + info[i].height/2 - mh/2;
+		}
+		else if (location > 8) {
+			x = info[i].x_org + dmx;
+			y = info[i].y_org + (topbar ? dmy : info[i].height - mh - dmy);
+		}
+		else {
+			x = info[i].x_org + dmx;
+			y = info[i].y_org + (topbar ? dmy : info[i].height - mh - dmy);
+		}
 		XFree(info);
 	} else
 #endif
@@ -957,51 +959,53 @@ setup(void)
 		if (!XGetWindowAttributes(dpy, parentwin, &wa))
 			die("could not get embedding window attributes: 0x%lx",
 			    parentwin);
-		mw = (dmw>0 ? dmw : wa.width);
-		if (strcmp(location,"mc")==0) {
-			x = wa.width/2 - mw/2;
-			y = wa.height/2 - mh/2;
-		}
-		else if(strcmp(location,"tl")==0) {
-			x = 0;
-			y = 0;
-		}
-		else if (strcmp(location,"tc")==0) {
-			x = wa.width/2 - mw/2;
-			y = 0;
-		}
-		else if (strcmp(location,"tr")==0) {
-			x = wa.width - mw;
-			y = 0;
-		}
-		else if (strcmp(location,"mr")==0) {
-			x = wa.width - mw;
-			y = wa.height/2 - mh/2;
-		}
-		else if (strcmp(location,"br")==0) {
-			x = wa.width - mw;
-			y = wa.height - mh;
-		}
-		else if (strcmp(location,"bc")==0) {
-			x = wa.width/2 - mw/2;
-			y = wa.height - mh;
-		}
-		else if (strcmp(location,"bl")==0) {
-			x = 0;
-			y = wa.height - mh;
-		}
-		else if (strcmp(location,"ml")==0) {
-			x = 0;
-			y = wa.height/2 - mh/2;
-		}
-		else {
-			x = 0;
-			y = 0;
-		}
-		x = x + dmx;
-		y = y + dmy;
 //		x = dmx;
 //		y = topbar ? dmy : wa.height - mh - dmy;
+		mw = (dmw>0 ? dmw : wa.width);
+		if (location == 0) {
+			x = wa.width/2 - mw/2;
+			y = wa.height/2 - mh/2;
+		}
+		else if(location == 1) {
+			x = 0;
+			y = 0;
+		}
+		else if (location == 2) {
+			x = wa.width/2 - mw/2;
+			y = 0;
+		}
+		else if (location == 3) {
+			x = wa.width - mw;
+			y = 0;
+		}
+		else if (location == 4) {
+			x = wa.width - mw;
+			y = wa.height/2 - mh/2;
+		}
+		else if (location == 5) {
+			x = wa.width - mw;
+			y = wa.height - mh;
+		}
+		else if (location == 6) {
+			x = wa.width/2 - mw/2;
+			y = wa.height - mh;
+		}
+		else if (location == 7) {
+			x = 0;
+			y = wa.height - mh;
+		}
+		else if (location == 8) {
+			x = 0;
+			y = wa.height/2 - mh/2;
+		}
+		else if (location > 8) {
+			x = dmx;
+			y = topbar ? dmy : wa.height - mh - dmy;
+		}
+		else {
+			x = dmx;
+			y = topbar ? dmy : wa.height - mh - dmy;
+		}
 	}
 	promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
 	inputw = MIN(inputw, mw/3);
@@ -1075,7 +1079,7 @@ main(int argc, char *argv[])
 		else if (!strcmp(argv[i], "-l"))   /* number of lines in vertical list */
 			lines = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-L"))   /* number of location */
-			location = argv[++i];
+			location = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-x"))   /* window x offset */
 			dmx = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-y"))   /* window y offset (from bottom up if -b) */
