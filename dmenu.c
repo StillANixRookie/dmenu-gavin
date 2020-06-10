@@ -1088,7 +1088,7 @@ main(int argc, char *argv[])
 			prompt = argv[++i];
 		else if (!strcmp(argv[i], "-fn"))  /* font or font set */
 			fonts[0] = argv[++i];
-		else if(!strcmp(argv[i], "-h")) { /* minimum height of one menu line */
+		else if(!strcmp(argv[i], "-H")) { /* minimum height of one menu line */
 			lineheight = atoi(argv[++i]);
 			lineheight = MAX(lineheight,8); /* reasonable default in case of value too small/negative */
 		}
