@@ -7,15 +7,14 @@ __dmenu__ - dynamic menu
 ```
 dmenu|dmenu_run [ -bfiv ] [ -l lines ]
                 [ -m monitor ] [ -p prompt ]
+                [ -L tl|tc|tr|ml|mc|mr|bl|bc|br]
                 [ -fn font ] [ -nb color ] [ -nf color ]
-                [-L 0|1|2|3|4|5|6|7|8|tl|tc|tr|ml|mc|mr|bl|bc|br]
                 [ -sb color ] [ -sf color ] [ -nhb color ]
                 [ -nhf color ] [ -shb color ] [ -shf color ]
                 [ -w windowid ]
 ```
 
 # DESCRIPTION
-
 ## `dmenu`
 
 is a dynamic menu for X, which reads a list of
@@ -29,10 +28,25 @@ items to those matching the tokens in the input.
 is a script used by `dwm` which lists programs in the
 user's `$PATH` and runs the result in their `$SHELL`.
 
+## My patches
+
+- [x] dmenu-caseinsensitive-20200523-db6093f.diff
+- [x] dmenu-fuzzyhighlight-4.9.diff
+- [x] dmenu-fuzzymatch-4.9.diff
+- [x] dmenu-lineheight-4.9.diff
+- [x] dmenu-mousesupport-4.9.diff
+- [x] dmenu-xyw-4.7.diff
+- [x] dmenu-pango-4.9-20200612.diff
+	- this is my own patch, it won't be on `suckless.org`
+- [ ] dmenu-pango-imlib-4.9-20140203.diff
+	- this one I'm still trying to sort out. It's available
+	  [here](https://github.com/Cloudef/dmenu-pango-imlib)
+
 # OPTIONS
 
 `-b`  
-dmenu appears at the bottom of the screen.
+dmenu appears at the bottom of the screen. Doesn't exist
+any more because this is handled by -L
 
 `-f`  
 dmenu grabs the keyboard before reading `stdin` if not reading
@@ -67,15 +81,13 @@ given monitor.
 `-w  <width>`  
 sets the width of the dmenu window.
 
-`-L 0|1|2|3|4|5|6|7|8|tl|tc|tr|ml|mc|mr|bl|bc|br`  
-Where to draw `dmenu`. Specify the same way as you would for
-`rofi`, or the sane way.
+`-L tl|tc|tr|ml|mc|mr|bl|bc|br`  
+Where to draw `dmenu`.  
 ```
-1|tl 2|tc 3|tr
-8|ml 0|mc 4|mr
-7|bl 6|bc 5|br
+tl tc tr
+ml mc mr
+bl bc br
 ```
-
 
 `-m  <monitor>`  
 dmenu is displayed on the monitor number supplied. Monitor
