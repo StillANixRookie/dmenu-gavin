@@ -30,18 +30,16 @@ user's `$PATH` and runs the result in their `$SHELL`.
 
 ## My patches
 
-- [x] dmenu-caseinsensitive-20200523-db6093f.diff
-- [x] dmenu-fuzzyhighlight-4.9.diff
-- [x] dmenu-fuzzymatch-4.9.diff
-- [x] dmenu-lineheight-4.9.diff
-- [x] dmenu-mousesupport-4.9.diff
-- [x] dmenu-xyw-4.7.diff
-- [x] dmenu-pango-4.9-20200612.diff
-	- this is my [own patch](https://github.com/StillANixRookie/dmenu-pango),
-	  it won't be on `suckless.org`
-- [ ] dmenu-pango-imlib-4.9-20140203.diff
-	- this one I'm still trying to sort out. It's available
-	  [here](https://github.com/Cloudef/dmenu-pango-imlib)
+- [x] [dmenu-caseinsensitive-20200523-db6093f.diff](https://tools.suckless.org/dmenu/patches/case-insensitive/)
+- [x] [dmenu-fuzzyhighlight-4.9.diff](https://tools.suckless.org/dmenu/patches/fuzzyhighlight/)
+- [x] [dmenu-fuzzymatch-4.9.diff](https://tools.suckless.org/dmenu/patches/fuzzymatch/)
+- [x] [dmenu-lineheight-4.9.diff](https://tools.suckless.org/dmenu/patches/line-height/)
+- [x] [dmenu-mousesupport-4.9.diff](https://tools.suckless.org/dmenu/patches/mouse-support/)
+- [x] [dmenu-xyw-4.7.diff](https://tools.suckless.org/dmenu/patches/xyw/)
+- [x] [dmenu-pango-4.9-20200612.diff](https://github.com/StillANixRookie/dmenu-pango)
+	- this is my own patch, it won't be on the suckless site
+- [ ] [dmenu-pango-imlib-4.9-20140203.diff](https://github.com/Cloudef/dmenu-pango-imlib)
+	- this one I'm still trying to sort out.
 
 # OPTIONS
 
