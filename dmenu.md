@@ -37,7 +37,8 @@ user's `$PATH` and runs the result in their `$SHELL`.
 - [x] dmenu-mousesupport-4.9.diff
 - [x] dmenu-xyw-4.7.diff
 - [x] dmenu-pango-4.9-20200612.diff
-	- this is my own patch, it won't be on `suckless.org`
+	- this is my [own patch](https://github.com/StillANixRookie/dmenu-pango),
+	  it won't be on `suckless.org`
 - [ ] dmenu-pango-imlib-4.9-20140203.diff
 	- this one I'm still trying to sort out. It's available
 	  [here](https://github.com/Cloudef/dmenu-pango-imlib)
