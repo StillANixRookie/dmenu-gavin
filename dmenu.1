@@ -11,8 +11,8 @@
 \f[C]
 dmenu|dmenu_run [ -bfiv ] [ -l lines ]
                 [ -m monitor ] [ -p prompt ]
+                [ -L tl|tc|tr|ml|mc|mr|bl|bc|br]
                 [ -fn font ] [ -nb color ] [ -nf color ]
-                [-L 0|1|2|3|4|5|6|7|8|tl|tc|tr|ml|mc|mr|bl|bc|br]
                 [ -sb color ] [ -sf color ] [ -nhb color ]
                 [ -nhf color ] [ -shb color ] [ -shf color ]
                 [ -w windowid ]
@@ -31,6 +31,39 @@ input.
 .PP
 is a script used by \f[C]dwm\f[R] which lists programs in the user\[cq]s
 \f[C]$PATH\f[R] and runs the result in their \f[C]$SHELL\f[R].
+.SS My patches
+.IP \[bu] 2
+\[u2612]
+dmenu-caseinsensitive-20200523-db6093f.diff (https://tools.suckless.org/dmenu/patches/case-insensitive/)
+.IP \[bu] 2
+\[u2612]
+dmenu-fuzzyhighlight-4.9.diff (https://tools.suckless.org/dmenu/patches/fuzzyhighlight/)
+.IP \[bu] 2
+\[u2612]
+dmenu-fuzzymatch-4.9.diff (https://tools.suckless.org/dmenu/patches/fuzzymatch/)
+.IP \[bu] 2
+\[u2612]
+dmenu-lineheight-4.9.diff (https://tools.suckless.org/dmenu/patches/line-height/)
+.IP \[bu] 2
+\[u2612]
+dmenu-mousesupport-4.9.diff (https://tools.suckless.org/dmenu/patches/mouse-support/)
+.IP \[bu] 2
+\[u2612]
+dmenu-xyw-4.7.diff (https://tools.suckless.org/dmenu/patches/xyw/)
+.IP \[bu] 2
+\[u2612]
+dmenu-pango-4.9-20200612.diff (https://raw.githubusercontent.com/StillANixRookie/dmenu-pango/master/dmenu-pango-4.9-20200612.diff)
+.RS 2
+.IP \[bu] 2
+this is my own patch, it won\[cq]t be on the suckless site
+.RE
+.IP \[bu] 2
+\[u2610]
+dmenu-pango-imlib (https://github.com/Cloudef/dmenu-pango-imlib)
+.RS 2
+.IP \[bu] 2
+this one I\[cq]m still trying to sort out.
+.RE
 .SH OPTIONS
 .PP
 \f[C]-b\f[R]
@@ -38,6 +71,7 @@ is a script used by \f[C]dwm\f[R] which lists programs in the user\[cq]s
 .P
 .PD
 dmenu appears at the bottom of the screen.
+Doesn\[cq]t exist any more because this is handled by -L
 .PP
 \f[C]-f\f[R]
 .PD 0
@@ -105,18 +139,17 @@ monitor.
 .PD
 sets the width of the dmenu window.
 .PP
-\f[C]-L 0|1|2|3|4|5|6|7|8|tl|tc|tr|ml|mc|mr|bl|bc|br\f[R]
+\f[C]-L tl|tc|tr|ml|mc|mr|bl|bc|br\f[R]
 .PD 0
 .P
 .PD
 Where to draw \f[C]dmenu\f[R].
-Specify the same way as you would for \f[C]rofi\f[R], or the sane way.
 .IP
 .nf
 \f[C]
-1|tl 2|tc 3|tr
-8|ml 0|mc 4|mr
-7|bl 6|bc 5|br
+tl tc tr
+ml mc mr
+bl bc br
 \f[R]
 .fi
 .PP
