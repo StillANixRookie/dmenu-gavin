@@ -32,9 +32,9 @@ user's `$PATH` and runs the result in their `$SHELL`.
 
 - [x] [dmenu-caseinsensitive-20200523-db6093f.diff](https://tools.suckless.org/dmenu/patches/case-insensitive/)
 - [x] [dmenu-fuzzyhighlight-4.9.diff](https://tools.suckless.org/dmenu/patches/fuzzyhighlight/)
-	- Disabled until I can get it to draw correctly over the
-	marked up text. It currently shows matched characters in
-	the whole line of text, not just the pango output:
+	- But it doesn't draw correctly over the marked-up text,
+	  so it currently shows matched characters in the whole
+	  line of text, not just the pango output:
 
 ![bad fuzzy highlight](badpango.png)
 
