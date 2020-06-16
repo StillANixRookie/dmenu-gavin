@@ -44,7 +44,7 @@ static char **hpitems = NULL;
 static int hplength = 0;
 static char text[BUFSIZ] = "";
 static char *embed;
-static int bho, bh, mw, mh;
+static int bhr, bho, bh, mw, mh;
 static int dmx = 0; /* put dmenu at this x offset */
 static int dmy = 0; /* put dmenu at this y offset (measured from the bottom if topbar is 0) */
 static unsigned int dmw = 0; /* make dmenu this wide */
@@ -219,29 +219,34 @@ drawmenu(void)
 	int x = 0, y = 0, fh = drw->font->h, w;
 
 	drw_setscheme(drw, scheme[SchemeNorm]);
-	if (lines == 0 && padding > 0)
-		drw_rect(drw, 0, 0, mw + padding*2, mh, 1, 1);
-	else
+	if (lines > 0)
 		drw_rect(drw, 0, 0, mw, mh, 1, 1);
+	else
+		drw_rect(drw, 0, 0, mw + padding*2, mh, 1, 1);
 
 	if (prompt && *prompt) {
 		drw_setscheme(drw, scheme[SchemeSel]);
-		x = drw_text(drw, x+padding, padding,
-			promptw, bh,
-			lrpad / 2, prompt, 0, True
-		);
+		if (lines > 0)
+			x = drw_text(drw, x+padding, padding, promptw, bh, lrpad / 2, prompt, 0, True);
+		else
+			x = drw_text(drw, x+padding, (mh-bh)/2, promptw, bh, lrpad / 2, prompt, 0, True);
 	}
 	/* draw input field */
 	w = (lines > 0 || !matches) ? mw - x - padding : inputw;
 	drw_setscheme(drw, scheme[SchemeInput]);
-	drw_text(drw, x, padding,
-		w, bh,
-		lrpad / 2, text, 0, False
-	);
+	if (lines > 0)
+		drw_text(drw, x, padding, w, bh, lrpad / 2, text, 0, False);
+	else
+		drw_text(drw, x, (mh-bh)/2, w, bh, lrpad / 2, text, 0, False);
+
 	curpos = TEXTW(text) - TEXTW(&text[cursor]);
 	if ((curpos += lrpad / 2 - 1) < w) {
 		drw_setscheme(drw, scheme[SchemeInput]);
-		drw_rect(drw, x + curpos, 2 + (bh-fh)/2 + padding, 2, fh - 4, 1, 0);
+		drw_rect(drw, x + curpos, 2 + (bh-fh)/2 + padding, 2, fh - 0, 1, 0);
+//		if (lines > 0)
+//			drw_rect(drw, x + curpos, 2 + (bh-fh)/2 + padding, 2, fh - 0, 1, 0);
+//		else
+//			drw_rect(drw, x + curpos, 2 + (bh-fh)/2 + padding, 2, fh - 0, 1, 0);
 	}
 
 	if (lines > 0) {
@@ -256,15 +261,15 @@ drawmenu(void)
 		w = TEXTW("<");
 		if (curr->left) {
 			drw_setscheme(drw, scheme[SchemeNorm]);
-			drw_text(drw, x, padding, w, bh, lrpad / 2, "<", 0, True);
+			drw_text(drw, x, (mh-bh)/2, w, bh, lrpad / 2, "<", 0, True);
 		}
 		x += w;
 		for (item = curr; item != next; item = item->right)
-			x = drawitem(item, x, padding, MIN(TEXTWM(item->text), mw - x - TEXTW(">")));
+			x = drawitem(item, x, (mh-bh)/2, MIN(TEXTWM(item->text), mw - x - TEXTW(">")));
 		if (next) {
 			w = TEXTW(">");
 			drw_setscheme(drw, scheme[SchemeNorm]);
-			drw_text(drw, mw - w, padding, w, bh, lrpad / 2, ">", 0, True);
+			drw_text(drw, mw - w, (mh-bh)/2, w, bh, lrpad / 2, ">", 0, True);
 		}
 	}
 	drw_map(drw, win, 0, 0, mw, mh);
@@ -920,15 +925,21 @@ setup(void)
 
 	/* calculate menu geometry */
 //		y = topbar ? dmy : mh - dmy;
-	bho = drw->font->h;
-	bho = MAX(bho,lineheight); /* make a menu line AT LEAST 'lineheight' tall */
+	bhr = drw->font->h;
+	bho = MAX(bhr,lineheight); /* make a menu line AT LEAST 'lineheight' tall */
 	lines = MAX(lines, 0);
 	if (lines > 0) {
 		mh = (lines + 1)*bho;
-		bh = (mh - padding*2)/(lines + 1); /* make a menu line AT LEAST 'lineheight' tall */
+		bh = (mh - padding*2)/(lines + 1);
+		if (bh < bhr) {
+			mh = (lines + 1)*bho + padding*2;
+			bh = bho;
+		}
 	} else {
-		mh = (lines + 1)*bho + padding*2;
+		mh = bho + padding*2;
+		bh = bho;
 	}
+
 #ifdef XINERAMA
 	i = 0;
 	if (parentwin == root && (info = XineramaQueryScreens(dpy, &n))) {

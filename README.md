@@ -40,10 +40,27 @@ user's `$PATH` and runs the result in their `$SHELL`.
 
 - [x] [dmenu-fuzzymatch-4.9.diff](https://tools.suckless.org/dmenu/patches/fuzzymatch/)
 - [x] [dmenu-lineheight-4.9.diff](https://tools.suckless.org/dmenu/patches/line-height/)
+
+![horinorm](lineheight1.png)
+![horithick](lineheight2.png)
+![vertnorm](lineheight3.png)
+![vertnorm](lineheight4.png)
+
 - [x] [dmenu-mousesupport-4.9.diff](https://tools.suckless.org/dmenu/patches/mouse-support/)
 - [x] [dmenu-xyw-4.7.diff](https://tools.suckless.org/dmenu/patches/xyw/)
 - [x] [dmenu-pango-4.9-20200612.diff](https://raw.githubusercontent.com/StillANixRookie/dmenu-pango/master/dmenu-pango-4.9-20200612.diff)
 	- this is my own patch, it won't be on the suckless site
+
+![pango](pango.png)
+
+- [x] padding
+	- no `diff` for this, soz
+
+![horipad](horipad.png)
+![horinopad](horinopad.png)
+![vertpad](vertpad.png)
+![vertnopad](vertnopad.png)
+
 - [ ] [dmenu-pango-imlib](https://github.com/Cloudef/dmenu-pango-imlib)
 	- this one I'm still trying to sort out.
 
