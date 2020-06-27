@@ -1,2 +1,4 @@
 #!/bin/sh
-dmenu_path | dmenu "$@" | ${SHELL:-"/bin/sh"} &
+#devour
+echo $PATH | tr ':' '\n' | xargs stest -flx | sort -u | \
+	dmenu "$@" | ${SHELL:-"/bin/sh"} &

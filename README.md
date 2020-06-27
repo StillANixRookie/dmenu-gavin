@@ -1,3 +1,5 @@
+![dmenu](dmenu.png)
+
 # NAME
 
 __dmenu__ - dynamic menu
